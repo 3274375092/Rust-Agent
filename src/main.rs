@@ -27,6 +27,7 @@ async fn main() -> Result<()> {
         .preamble("You are a helpful assistant.")
         .tool(tools::ListFilesTool)
         .tool(tools::ReadFileTool)
+        .tool(tools::EditFileTool)
         .build();
     let mut history = Vec::new();
     loop {

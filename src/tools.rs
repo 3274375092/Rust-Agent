@@ -118,3 +118,55 @@ impl Tool for ReadFileTool {
     }
 }
 
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct EditFileArgs {
+    pub path: String,
+    pub new_content: String,
+    pub old_content: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EditFileTool;
+
+impl Tool for EditFileTool {
+    const NAME: &'static str = "edit_file";
+    type Args = EditFileArgs;
+    type Output = Value;
+    type Error = std::io::Error;
+
+    async fn definition(&self, _prompt: String) -> ToolDefinition {
+        ToolDefinition {
+            name: Self::NAME.to_string(),
+            description: "Edit the content of a file. If old_content is provided, only the first occurrence of that text will be replaced with new_content. Otherwise, the entire file will be replaced with new_content.".to_string(),
+            parameters: serde_json::to_value(schema_for!(EditFileArgs))
+                .expect("EditFileArgs schema should serialize"),
+        }
+    }
+
+    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+        let path = std::path::Path::new(&args.path);
+        if !path.is_file(){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{} is not a file", args.path)));
+        }
+        let content = std::fs::read_to_string(path)?;
+        if let Some(old_content) = &args.old_content {
+            if !content.contains(old_content) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!(
+                        "The specified old_content was not found in the file '{}'.\n\
+                         Please ensure the text matches exactly (including whitespace and line breaks).",
+                        args.path
+                    ),
+                ));
+            }
+
+            let new_content = content.replacen(old_content, &args.new_content, 1);
+            std::fs::write(path, new_content)?;
+        } else {
+            std::fs::write(path, args.new_content)?;
+        }
+        
+        Ok(json!({ "path": args.path,"operation": if args.old_content.is_some() { "replace_first_occurrence" } else { "replace_entire_file" } }))
+    }
+}

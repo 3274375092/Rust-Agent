@@ -117,3 +117,4 @@ impl Tool for ReadFileTool {
             "total_chars": total_chars }))
     }
 }
+

@@ -5,7 +5,9 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.102"
+chrono = { version = "0.4.38", features = ["serde"] }
 dotenvy = "0.15.7"
+regex = "1.10.4"  # 添加regex依赖
 rig-core = "0.35.0"
 schemars = "1.2.1"
 serde = { version = "1.0.228", features = ["derive"] }

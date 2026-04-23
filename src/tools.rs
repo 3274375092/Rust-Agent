@@ -6,7 +6,7 @@ use rig::{
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-
+use walkdir::WalkDir;
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct ListFilesArgs {
     pub path: String,
@@ -45,26 +45,26 @@ impl Tool for ListFilesTool {
         if !path.is_dir() {
             return Err(ListFilesError::NotDirectory(args.path));
         }
+        let mut files =Vec::new(); 
+        for entry in WalkDir::new(path).min_depth(1)
+        .max_depth(5)
+        .sort_by_file_name()
+        .into_iter()
+        .filter_map(|e|e.ok())
+        .filter(|e| e.file_type().is_dir() || e.file_type().is_file())
+        {
+                let entry_path = entry.path().strip_prefix(path).map_err(|e|ListFilesError::Other(e.to_string()))?;
+                let mut entry_path = entry_path.to_string_lossy().replace('\\', "/");
+                if entry.file_type().is_dir() {
+                    entry_path.push('/');
+                }
+                files.push(entry_path);
+        }
 
-        let entries = std::fs::read_dir(path)
-            .with_context(|| format!("failed to read directory {}", args.path))
-            .map_err(|err| ListFilesError::Other(err.to_string()))?;
+        
 
-        let files = entries
-            .map(|entry| -> Result<Value, ListFilesError> {
-                let entry = entry.map_err(ListFilesError::from)?;
-                let entry_path = entry.path();
-                let file_type = entry.file_type().map_err(ListFilesError::from)?;
-
-                Ok(json!({
-                    "name": entry.file_name().to_string_lossy().to_string(),
-                    "path": entry_path.display().to_string(),
-                    "is_dir": file_type.is_dir(),
-                }))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(json!({ "files": files }))
+        Ok(json!({ "root": path.display().to_string().replace('\\', "/"),
+            "files": files }))
     }
 }
 

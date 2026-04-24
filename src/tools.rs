@@ -1,11 +1,9 @@
 use anyhow::{Context, Result};
-use rig::{
-    completion::ToolDefinition,
-    tool::Tool,
-};
+use rig::{completion::ToolDefinition, tool::Tool};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use walkdir::WalkDir;
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct ListFilesArgs {
@@ -45,26 +43,30 @@ impl Tool for ListFilesTool {
         if !path.is_dir() {
             return Err(ListFilesError::NotDirectory(args.path));
         }
+        let mut files = Vec::new();
+        for entry in WalkDir::new(path)
+            .min_depth(1)
+            .max_depth(5)
+            .sort_by_file_name()
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_dir() || e.file_type().is_file())
+        {
+            let entry_path = entry
+                .path()
+                .strip_prefix(path)
+                .map_err(|e| ListFilesError::Other(e.to_string()))?;
+            let mut entry_path = entry_path.to_string_lossy().replace('\\', "/");
+            if entry.file_type().is_dir() {
+                entry_path.push('/');
+            }
+            files.push(entry_path);
+        }
 
-        let entries = std::fs::read_dir(path)
-            .with_context(|| format!("failed to read directory {}", args.path))
-            .map_err(|err| ListFilesError::Other(err.to_string()))?;
-
-        let files = entries
-            .map(|entry| -> Result<Value, ListFilesError> {
-                let entry = entry.map_err(ListFilesError::from)?;
-                let entry_path = entry.path();
-                let file_type = entry.file_type().map_err(ListFilesError::from)?;
-
-                Ok(json!({
-                    "name": entry.file_name().to_string_lossy().to_string(),
-                    "path": entry_path.display().to_string(),
-                    "is_dir": file_type.is_dir(),
-                }))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(json!({ "files": files }))
+        Ok(json!({
+            "root": path.display().to_string().replace('\\', "/"),
+            "files": files
+        }))
     }
 }
 
@@ -105,13 +107,12 @@ impl Tool for ReadFileTool {
         if !path.is_file() {
             return Err(ReadFileError::NotFile(args.path));
         }
-        let bytes =
-            std::fs::read(path)
-                .with_context(|| format!("failed to read file {}", args.path))
-                .map_err(|err| ReadFileError::Other(err.to_string()))?;
+        let bytes = std::fs::read(path)
+            .with_context(|| format!("failed to read file {}", args.path))
+            .map_err(|err| ReadFileError::Other(err.to_string()))?;
         let content = String::from_utf8_lossy(&bytes).to_string();
         let total_chars = content.chars().count();
-        Ok(json!({ 
+        Ok(json!({
             "path": args.path,
             "content": content,
             "total_chars": total_chars }))
@@ -145,8 +146,11 @@ impl Tool for EditFileTool {
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         let path = std::path::Path::new(&args.path);
-        if !path.is_file(){
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{} is not a file", args.path)));
+        if !path.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("{} is not a file", args.path),
+            ));
         }
         let content = std::fs::read_to_string(path)?;
         if let Some(old_content) = &args.old_content {
@@ -166,7 +170,10 @@ impl Tool for EditFileTool {
         } else {
             std::fs::write(path, args.new_content)?;
         }
-        
-        Ok(json!({ "path": args.path,"operation": if args.old_content.is_some() { "replace_first_occurrence" } else { "replace_entire_file" } }))
+
+        Ok(json!({
+            "path": args.path,
+            "operation": if args.old_content.is_some() { "replace_first_occurrence" } else { "replace_entire_file" }
+        }))
     }
 }

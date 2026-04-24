@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
         .build()?;
 
     let agent = client
-        .agent(deepseek::DEEPSEEK_CHAT)
+        .agent("deepseek-v4-pro")
         .preamble("You are a helpful assistant.")
         .tool(tools::ListFilesTool)
         .tool(tools::ReadFileTool)

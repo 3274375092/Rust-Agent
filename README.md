@@ -1,103 +1,101 @@
 # Rust Agent
 
-一个基于 Rust、Tokio 和 `rig-core` 的命令行 AI Agent 示例项目。项目使用 OpenAI-compatible Chat Completions 接口，因此可以接入 DeepSeek、OpenAI、OpenRouter、Ollama、LM Studio 等兼容 API 的模型服务。
+Rust Agent 鏄竴涓湰鍦板懡浠よ AI 鍔╂墜銆備綘鍙互鎶婂畠鎺ュ埌 DeepSeek銆丱penAI銆丱penRouter銆丱llama銆丩M Studio 绛夊吋瀹?OpenAI Chat Completions 鐨勬ā鍨嬫湇鍔★紝鐒跺悗璁╁畠鍦ㄤ綘鐨勯」鐩洰褰曢噷璇绘枃浠躲€佹敼鏂囦欢銆佹墽琛屽彈闄愮殑妫€鏌ュ懡浠ゃ€?
+## 浣犲彲浠ョ敤瀹冨仛浠€涔?
+- 鍜屾ā鍨嬭繘琛屽杞璇濄€?- 璁╂ā鍨嬫煡鐪嬮」鐩枃浠跺垪琛ㄣ€?- 璁╂ā鍨嬫寜琛岃鍙栨寚瀹氭枃浠跺唴瀹广€?- 璁╂ā鍨嬩慨鏀规枃浠跺唴瀹广€?- 璁╂ā鍨嬫墽琛屽畨鍏ㄧ櫧鍚嶅崟閲岀殑鍛戒护锛屼緥濡?`cargo check`銆乣git diff`銆?
+> 濡傛灉浣犲笇鏈涙ā鍨嬭兘璇绘枃浠躲€佹敼鏂囦欢鎴栨墽琛屽懡浠わ紝璇蜂娇鐢ㄦ敮鎸?tool calling / function calling 鐨勬ā鍨嬨€?
+## 蹇€熷紑濮?
+### 1. 鍑嗗 `.env`
 
-## 功能
-
-- 支持通过 `.env` 配置 API Key、Base URL 和模型名。
-- 使用 OpenAI-compatible Chat Completions 兼容层调用模型。
-- 支持多轮对话和流式输出。
-- 内置工具：
-  - `list_files`：递归列出目录内容，并跳过 `.git`、`target`、`node_modules`、`.env`、`Cargo.lock`。
-  - `read_file`：读取文件内容，支持 `start_line` / `end_line` 指定行范围。
-  - `edit_file`：替换整个文件，或替换文件中第一次出现的指定内容。
-  - `run_command`：执行白名单内的项目命令并返回输出。
-
-## 环境要求
-
-- Rust stable，建议使用最新版。
-- 一个支持 OpenAI-compatible Chat Completions 的 API 服务。
-- 如果要使用文件/命令工具，模型需要支持 tool calling/function calling。
-
-检查 Rust 版本：
-
-```powershell
-rustc --version
-cargo --version
-```
-
-## 配置
-
-复制示例环境文件：
-
+澶嶅埗绀轰緥閰嶇疆鏂囦欢锛?
 ```powershell
 Copy-Item .env.example .env
 ```
 
-推荐使用通用配置项：
-
+鐒跺悗缂栬緫 `.env`锛?
 ```dotenv
 API_KEY=sk-your-api-key
 BASE_URL=https://api.deepseek.com
 MODEL=deepseek-v4-pro
 ```
 
-配置项说明：
+甯哥敤閰嶇疆椤癸細
 
-- `API_KEY`：OpenAI-compatible API Key，优先读取。
-- `BASE_URL`：OpenAI-compatible API 地址。
-- `MODEL`：Agent 使用的聊天模型。
-- `DEEPSEEK_API_KEY`：兼容旧配置；当 `API_KEY` 不存在时读取。
-- `OPENAI_API_KEY`：兼容旧配置；当 `API_KEY` 和 `DEEPSEEK_API_KEY` 都不存在时读取。
-- `DEEPSEEK_BASE_URL` / `OPENAI_BASE_URL`：兼容旧配置；当 `BASE_URL` 不存在时读取。
+- `API_KEY`锛氫綘鐨勬ā鍨嬫湇鍔?API Key銆?- `BASE_URL`锛氭ā鍨嬫湇鍔″湴鍧€銆?- `MODEL`锛氳浣跨敤鐨勬ā鍨嬪悕绉般€?
+`.env` 閲岄€氬父鍖呭惈瀵嗛挜锛屼笉瑕佹妸瀹冩彁浜ゅ埌 Git 浠撳簱銆?
+### 2. 杩愯绋嬪簭
 
-`.env` 已被 `.gitignore` 忽略，请不要提交真实密钥。
+濡傛灉浣犳槸浠庢簮鐮佽繍琛岋細
 
-## `.env` 加载位置
+```powershell
+cargo run
+```
 
-`.env` 不会被编译进可执行文件，它是在程序启动时由 `dotenvy` 读取的。
+濡傛灉浣犲凡缁忔湁缂栬瘧濂界殑绋嬪簭锛?
+```powershell
+.\rig-agent.exe
+```
 
-当前代码使用 `dotenvy::dotenv().ok()`，因此默认从“启动程序时的当前工作目录”查找 `.env`。
+鍚姩鍚庣湅鍒版彁绀虹锛?
+```text
+You>
+```
 
-开发时通常放在项目根目录：
+鐩存帴杈撳叆浣犵殑闂鍗冲彲銆傞€€鍑鸿杈撳叆锛?
+```text
+exit
+```
 
+鎴栵細
+
+```text
+quit
+```
+
+## `.env` 搴旇鏀惧湪鍝噷
+
+`.env` 涓嶄細琚紪璇戣繘 `.exe`锛屽畠鏄湪绋嬪簭鍚姩鏃惰鍙栫殑銆?
+褰撳墠绋嬪簭浣跨敤 `dotenvy::dotenv().ok()` 鍔犺浇閰嶇疆锛屾墍浠ュ畠浼氫粠鈥滃惎鍔ㄧ▼搴忔椂鐨勫綋鍓嶅伐浣滅洰褰曗€濇煡鎵?`.env`銆?
+寮€鍙戞椂閫氬父杩欐牱鏀撅細
+
+```text
+E:\Rust\Rust-Agent\
+鈹溾攢鈹€ .env
+鈹溾攢鈹€ Cargo.toml
+鈹斺攢鈹€ src\
+```
+
+鐒跺悗鍦ㄩ」鐩牴鐩綍杩愯锛?
 ```powershell
 cd E:\Rust\Rust-Agent
 cargo run
 ```
 
-这会读取：
-
-```text
-E:\Rust\Rust-Agent\.env
-```
-
-发布 exe 时，可以把 `.env` 和程序放在同一目录：
+鍙戝竷缁欑敤鎴锋椂锛屾帹鑽愭妸 `.env` 鍜?`.exe` 鏀惧湪鍚屼竴涓洰褰曪細
 
 ```text
 my-agent\
-├── rig-agent.exe
-└── .env
+鈹溾攢鈹€ rig-agent.exe
+鈹斺攢鈹€ .env
 ```
 
-然后从该目录启动：
+鐒跺悗浠庤繖涓洰褰曞惎鍔細
 
 ```powershell
 cd my-agent
 .\rig-agent.exe
 ```
 
-这会读取：
+杩欐牱绋嬪簭浼氳鍙栵細
 
 ```text
 my-agent\.env
 ```
 
-如果从其他目录启动 exe，当前代码会优先查找启动目录下的 `.env`，不是 exe 所在目录。
+娉ㄦ剰锛氬鏋滀綘浠庡叾浠栫洰褰曞惎鍔ㄨ繖涓?exe锛岀▼搴忎細浼樺厛璇诲彇鈥滃惎鍔ㄧ洰褰曗€濅笅鐨?`.env`锛屼笉鏄?exe 鎵€鍦ㄧ洰褰曘€?
+## 甯歌妯″瀷閰嶇疆
 
-## 常见模型服务配置
-
-DeepSeek：
+### DeepSeek
 
 ```dotenv
 API_KEY=sk-your-deepseek-key
@@ -105,7 +103,7 @@ BASE_URL=https://api.deepseek.com
 MODEL=deepseek-v4-pro
 ```
 
-OpenAI：
+### OpenAI
 
 ```dotenv
 API_KEY=sk-your-openai-key
@@ -113,7 +111,7 @@ BASE_URL=https://api.openai.com/v1
 MODEL=gpt-4.1
 ```
 
-OpenRouter：
+### OpenRouter
 
 ```dotenv
 API_KEY=sk-or-your-openrouter-key
@@ -121,7 +119,7 @@ BASE_URL=https://openrouter.ai/api/v1
 MODEL=deepseek/deepseek-chat-v3.1
 ```
 
-Ollama 本地服务：
+### Ollama 鏈湴妯″瀷
 
 ```dotenv
 API_KEY=ollama
@@ -129,7 +127,7 @@ BASE_URL=http://localhost:11434/v1
 MODEL=qwen2.5-coder:7b
 ```
 
-LM Studio 本地服务：
+### LM Studio 鏈湴妯″瀷
 
 ```dotenv
 API_KEY=lm-studio
@@ -137,31 +135,28 @@ BASE_URL=http://localhost:1234/v1
 MODEL=local-model
 ```
 
-## 运行
+## 鍐呯疆宸ュ叿璇存槑
 
-```powershell
-cargo run
-```
+### 鏂囦欢鍒楄〃
 
-进入交互后输入问题即可。输入下面任一命令退出：
+`list_files` 浼氬垪鍑虹洰褰曚笅鐨勬枃浠跺拰鏂囦欢澶癸紝骞堕粯璁よ烦杩囪繖浜涘唴瀹癸細
 
-```text
-exit
-quit
-```
+- `.git`
+- `target`
+- `node_modules`
+- `.env`
+- `Cargo.lock`
 
-## 常用开发命令
+### 鏂囦欢璇诲彇
 
-```powershell
-cargo fmt --check
-cargo check
-cargo clippy --all-targets --all-features
-cargo test
-```
+`read_file` 鍙互璇诲彇鏁翠釜鏂囦欢锛屼篃鍙互鍙鍙栨寚瀹氳鑼冨洿锛屽噺灏戞ā鍨嬩笂涓嬫枃娑堣€椼€?
+### 鏂囦欢缂栬緫
 
-## 命令执行工具白名单
+`edit_file` 鍙互鏇挎崲鏁翠釜鏂囦欢锛屾垨鏇挎崲鏂囦欢涓涓€娆″嚭鐜扮殑鎸囧畾鍐呭銆傚缓璁瘡娆＄紪杈戝悗閫氳繃 `git diff` 妫€鏌ョ粨鏋溿€?
+### 鍛戒护鎵ц
 
-`run_command` 不开放任意 shell 命令，只允许部分项目审查命令：
+`run_command` 鍙兘鎵ц鐧藉悕鍗曢噷鐨勫懡浠わ紝涓嶄細寮€鏀句换鎰?shell 鍛戒护銆?
+鍏佽鐨勫懡浠ゅ寘鎷細
 
 - `cargo check`
 - `cargo test`
@@ -174,23 +169,19 @@ cargo test
 - `git show`
 - `rustc --version`
 
-命令执行会设置 60 秒超时，并把 `stdout`、`stderr`、`exit_code` 和 `success` 返回给模型。
+鍛戒护鏈€澶氳繍琛?60 绉掞紝缁撴灉浼氳繑鍥?`stdout`銆乣stderr`銆乣exit_code` 鍜?`success`銆?
+## 瀹夊叏鎻愰啋
 
-## 安全提醒
-
-- 不要把 `.env` 或真实 API Key 提交到仓库。
-- `edit_file` 能修改本地文件，建议先通过 `git diff` 确认改动。
-- `run_command` 当前使用白名单限制，扩展命令时应避免允许删除、移动、网络下载或长期运行的命令。
-- 不是所有 OpenAI-compatible 模型都支持工具调用；如果工具调用失败，请换成支持 function calling 的模型。
-
-## 项目结构
-
-```text
-.
-├── Cargo.toml
-├── .env.example
-├── README.md
-└── src
-    ├── main.rs
-    └── tools.rs
+- 涓嶈鍏紑 `.env`锛岄噷闈㈠彲鑳芥湁 API Key銆?- 璁╂ā鍨嬩慨鏀规枃浠跺墠锛屽缓璁厛鎻愪氦鎴栧浠藉綋鍓嶅伐浣滃尯銆?- 璁╂ā鍨嬩慨鏀规枃浠跺悗锛屽缓璁娇鐢?`git diff` 妫€鏌ユ敼鍔ㄣ€?- 濡傛灉妯″瀷涓嶈兘璋冪敤宸ュ叿锛岃纭浣犱娇鐢ㄧ殑妯″瀷鏀寔 function calling銆?
+## 浠庢簮鐮佹瀯寤?
+濡傛灉浣犳兂鑷繁缂栬瘧锛?
+```powershell
+cargo build --release
 ```
+
+缂栬瘧鍚庣殑绋嬪簭閫氬父浣嶄簬锛?
+```text
+target\release\rig-agent.exe
+```
+
+鍙互鎶婂畠澶嶅埗鍒板崟鐙洰褰曪紝骞跺湪鍚岀洰褰曞噯澶?`.env` 鍚庤繍琛屻€

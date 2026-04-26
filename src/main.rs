@@ -13,16 +13,15 @@ async fn main() -> Result<()> {
     let api_key = std::env::var("DEEPSEEK_API_KEY")
         .or_else(|_| std::env::var("OPENAI_API_KEY"))
         .context("set DEEPSEEK_API_KEY or OPENAI_API_KEY")?;
-    let base_url =
-        std::env::var("DEEPSEEK_BASE_URL").unwrap_or_else(|_| "https://api.deepseek.com".into());
-
+    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "https://api.deepseek.com".into());
+    let model = std::env::var("MODEL").unwrap_or_else(|_| "deepseek-v4-pro".into());
     let client = deepseek::Client::builder()
         .api_key(&api_key)
         .base_url(&base_url)
         .build()?;
 
     let agent = client
-        .agent("deepseek-v4-pro")
+        .agent(&model)
         .preamble("You are a helpful assistant.")
         .tool(tools::ListFilesTool)
         .tool(tools::ReadFileTool)

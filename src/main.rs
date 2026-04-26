@@ -10,7 +10,6 @@ use rig::{
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
-
     let api_key = std::env::var("DEEPSEEK_API_KEY")
         .or_else(|_| std::env::var("OPENAI_API_KEY"))
         .context("set DEEPSEEK_API_KEY or OPENAI_API_KEY")?;
@@ -28,6 +27,7 @@ async fn main() -> Result<()> {
         .tool(tools::ListFilesTool)
         .tool(tools::ReadFileTool)
         .tool(tools::EditFileTool)
+        .tool(tools::RunCommandTool)
         .build();
     let mut history = Vec::new();
     loop {

@@ -1,12 +1,13 @@
 # Rust Agent
 
-一个基于 Rust、Tokio 和 `rig-core` 的命令行 AI Agent 示例项目。当前默认使用 DeepSeek OpenAI-compatible API，并提供文件列表、文件读取、文件编辑和受限命令执行工具。
+一个基于 Rust、Tokio 和 `rig-core` 的命令行 AI Agent 示例项目。项目使用 OpenAI-compatible Chat Completions 接口，因此可以接入 DeepSeek、OpenAI、OpenRouter、Ollama、LM Studio 等兼容 API 的模型服务。
 
 ## 功能
 
-- 通过 DeepSeek API 创建可多轮对话的 Agent。
-- 支持 `.env` 配置 API Key、Base URL 和模型名。
-- 内置文件工具：
+- 支持通过 `.env` 配置 API Key、Base URL 和模型名。
+- 使用 OpenAI-compatible Chat Completions 兼容层调用模型。
+- 支持多轮对话和流式输出。
+- 内置工具：
   - `list_files`：递归列出目录内容，并跳过 `.git`、`target`、`node_modules`、`.env`、`Cargo.lock`。
   - `read_file`：读取文件内容，支持 `start_line` / `end_line` 指定行范围。
   - `edit_file`：替换整个文件，或替换文件中第一次出现的指定内容。
@@ -15,7 +16,8 @@
 ## 环境要求
 
 - Rust stable，建议使用最新版。
-- 一个可用的 DeepSeek API Key。
+- 一个支持 OpenAI-compatible Chat Completions 的 API 服务。
+- 如果要使用文件/命令工具，模型需要支持 tool calling/function calling。
 
 检查 Rust 版本：
 
@@ -32,22 +34,66 @@ cargo --version
 Copy-Item .env.example .env
 ```
 
-编辑 `.env`：
+推荐使用通用配置项：
 
 ```dotenv
-DEEPSEEK_API_KEY=sk-your-deepseek-api-key
+API_KEY=sk-your-api-key
 BASE_URL=https://api.deepseek.com
 MODEL=deepseek-v4-pro
 ```
 
 配置项说明：
 
-- `DEEPSEEK_API_KEY`：DeepSeek API Key，优先读取。
-- `OPENAI_API_KEY`：当 `DEEPSEEK_API_KEY` 不存在时作为备用 Key。
-- `BASE_URL`：OpenAI-compatible API 地址，默认 `https://api.deepseek.com`。
-- `MODEL`：Agent 使用的模型，默认 `deepseek-v4-pro`。
+- `API_KEY`：OpenAI-compatible API Key，优先读取。
+- `BASE_URL`：OpenAI-compatible API 地址。
+- `MODEL`：Agent 使用的聊天模型。
+- `DEEPSEEK_API_KEY`：兼容旧配置；当 `API_KEY` 不存在时读取。
+- `OPENAI_API_KEY`：兼容旧配置；当 `API_KEY` 和 `DEEPSEEK_API_KEY` 都不存在时读取。
+- `DEEPSEEK_BASE_URL` / `OPENAI_BASE_URL`：兼容旧配置；当 `BASE_URL` 不存在时读取。
 
 `.env` 已被 `.gitignore` 忽略，请不要提交真实密钥。
+
+## 常见模型服务配置
+
+DeepSeek：
+
+```dotenv
+API_KEY=sk-your-deepseek-key
+BASE_URL=https://api.deepseek.com
+MODEL=deepseek-v4-pro
+```
+
+OpenAI：
+
+```dotenv
+API_KEY=sk-your-openai-key
+BASE_URL=https://api.openai.com/v1
+MODEL=gpt-4.1
+```
+
+OpenRouter：
+
+```dotenv
+API_KEY=sk-or-your-openrouter-key
+BASE_URL=https://openrouter.ai/api/v1
+MODEL=deepseek/deepseek-chat-v3.1
+```
+
+Ollama 本地服务：
+
+```dotenv
+API_KEY=ollama
+BASE_URL=http://localhost:11434/v1
+MODEL=qwen2.5-coder:7b
+```
+
+LM Studio 本地服务：
+
+```dotenv
+API_KEY=lm-studio
+BASE_URL=http://localhost:1234/v1
+MODEL=local-model
+```
 
 ## 运行
 
@@ -93,6 +139,7 @@ cargo test
 - 不要把 `.env` 或真实 API Key 提交到仓库。
 - `edit_file` 能修改本地文件，建议先通过 `git diff` 确认改动。
 - `run_command` 当前使用白名单限制，扩展命令时应避免允许删除、移动、网络下载或长期运行的命令。
+- 不是所有 OpenAI-compatible 模型都支持工具调用；如果工具调用失败，请换成支持 function calling 的模型。
 
 ## 项目结构
 

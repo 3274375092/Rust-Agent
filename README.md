@@ -53,6 +53,48 @@ MODEL=deepseek-v4-pro
 
 `.env` 已被 `.gitignore` 忽略，请不要提交真实密钥。
 
+## `.env` 加载位置
+
+`.env` 不会被编译进可执行文件，它是在程序启动时由 `dotenvy` 读取的。
+
+当前代码使用 `dotenvy::dotenv().ok()`，因此默认从“启动程序时的当前工作目录”查找 `.env`。
+
+开发时通常放在项目根目录：
+
+```powershell
+cd E:\Rust\Rust-Agent
+cargo run
+```
+
+这会读取：
+
+```text
+E:\Rust\Rust-Agent\.env
+```
+
+发布 exe 时，可以把 `.env` 和程序放在同一目录：
+
+```text
+my-agent\
+├── rig-agent.exe
+└── .env
+```
+
+然后从该目录启动：
+
+```powershell
+cd my-agent
+.\rig-agent.exe
+```
+
+这会读取：
+
+```text
+my-agent\.env
+```
+
+如果从其他目录启动 exe，当前代码会优先查找启动目录下的 `.env`，不是 exe 所在目录。
+
 ## 常见模型服务配置
 
 DeepSeek：
@@ -152,4 +194,3 @@ cargo test
     ├── main.rs
     └── tools.rs
 ```
-

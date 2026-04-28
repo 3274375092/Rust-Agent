@@ -4,10 +4,11 @@ use std::io::Write;
 
 use anyhow::{Context, Result};
 use rig::{
-    agent::{self, stream_to_stdout},
+    agent::{self, PromptHook, stream_to_stdout},
     client::CompletionClient,
+    completion::{CompletionModel, GetTokenUsage},
     message::Message,
-    providers::openai,
+    providers::{deepseek, openai},
     streaming::StreamingChat,
 };
 
@@ -25,20 +26,50 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| "https://api.deepseek.com".into());
     let model = std::env::var("MODEL").unwrap_or_else(|_| "deepseek-v4-pro".into());
 
-    let client = openai::Client::builder()
-        .api_key(&api_key)
-        .base_url(&base_url)
-        .build()?
-        .completions_api();
+    if is_deepseek_api(&base_url) {
+        let client = deepseek::Client::builder()
+            .api_key(&api_key)
+            .base_url(&base_url)
+            .build()?;
+        let agent = build_agent(client.agent(&model));
+        run_agent(agent).await?;
+    } else {
+        let client = openai::Client::builder()
+            .api_key(&api_key)
+            .base_url(&base_url)
+            .build()?
+            .completions_api();
+        let agent = build_agent(client.agent(&model));
+        run_agent(agent).await?;
+    }
 
-    let agent = client
-        .agent(&model)
-        .preamble("You are a helpful assistant.")
+    Ok(())
+}
+//自循环
+fn build_agent<M, P>(builder: agent::AgentBuilder<M, P, agent::NoToolConfig>) -> agent::Agent<M, P>
+where
+    M: CompletionModel,
+    P: PromptHook<M>,
+{
+    builder
+        .preamble("你是一个拥有中文语言思维逻辑的人，接下来请用中文语言思维逻辑回答.")
         .tool(tools::ListFilesTool)
         .tool(tools::ReadFileTool)
         .tool(tools::EditFileTool)
         .tool(tools::RunCommandTool)
-        .build();
+        .build()
+}
+
+fn is_deepseek_api(base_url: &str) -> bool {
+    base_url.to_ascii_lowercase().contains("deepseek")
+}
+
+async fn run_agent<M, P>(agent: agent::Agent<M, P>) -> Result<()>
+where
+    M: CompletionModel + 'static,
+    M::StreamingResponse: Clone + Unpin + GetTokenUsage + rig::wasm_compat::WasmCompatSend,
+    P: PromptHook<M> + 'static,
+{
     let history = Vec::new();
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.first().map(String::as_str) == Some("--auto") {
@@ -46,19 +77,22 @@ async fn main() -> Result<()> {
             .get(1)
             .cloned()
             .unwrap_or_else(|| "Inspect the project and improve it safely.".into());
-        auto_loop(agent, goal, history).await?;
+        auto_loop(agent, goal, history).await
     } else {
-        interactive_loop(agent, history).await?;
+        interactive_loop(agent, history).await
     }
-
-    Ok(())
 }
-//自循环
-async fn auto_loop(
-    agent: agent::Agent<openai::CompletionModel>,
+
+async fn auto_loop<M, P>(
+    agent: agent::Agent<M, P>,
     goal: String,
     mut history: Vec<Message>,
-) -> Result<()> {
+) -> Result<()>
+where
+    M: CompletionModel + 'static,
+    M::StreamingResponse: Clone + Unpin + GetTokenUsage + rig::wasm_compat::WasmCompatSend,
+    P: PromptHook<M> + 'static,
+{
     let mut no_progress_count = 0;
     for cycle in 1..=50 {
         let prompt = format!(
@@ -119,10 +153,12 @@ Rules:
 
     Ok(())
 }
-async fn interactive_loop(
-    agent: agent::Agent<openai::CompletionModel>,
-    mut history: Vec<Message>,
-) -> Result<()> {
+async fn interactive_loop<M, P>(agent: agent::Agent<M, P>, mut history: Vec<Message>) -> Result<()>
+where
+    M: CompletionModel + 'static,
+    M::StreamingResponse: Clone + Unpin + GetTokenUsage + rig::wasm_compat::WasmCompatSend,
+    P: PromptHook<M> + 'static,
+{
     loop {
         print!("You> ");
         std::io::stdout()

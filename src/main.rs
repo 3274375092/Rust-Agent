@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
         .tool(tools::EditFileTool)
         .tool(tools::RunCommandTool)
         .build();
-    let mut history = Vec::new();
+    let history = Vec::new();
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.first().map(String::as_str) == Some("--auto") {
         let goal = args
@@ -48,42 +48,12 @@ async fn main() -> Result<()> {
             .unwrap_or_else(|| "Inspect the project and improve it safely.".into());
         auto_loop(agent, goal, history).await?;
     } else {
-        loop {
-            print!("You> ");
-            std::io::stdout()
-                .flush()
-                .context("failed to flush stdout")?;
-
-            let mut input = String::new();
-            let bytes_read = std::io::stdin()
-                .read_line(&mut input)
-                .context("failed to read user input")?;
-            if bytes_read == 0 {
-                break;
-            }
-
-            let input = input.trim();
-            if input.is_empty() {
-                continue;
-            }
-            if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
-                break;
-            }
-
-            let mut stream = agent
-                .stream_chat(input, history.clone())
-                .multi_turn(20)
-                .await;
-            let final_res = stream_to_stdout(&mut stream).await?;
-            if let Some(new_history) = final_res.history() {
-                history = new_history.to_vec();
-            }
-            println!();
-        }
+        interactive_loop(agent, history).await?;
     }
 
     Ok(())
 }
+//自循环
 async fn auto_loop(
     agent: agent::Agent<openai::CompletionModel>,
     goal: String,
@@ -147,5 +117,43 @@ Rules:
         }
     }
 
+    Ok(())
+}
+async fn interactive_loop(
+    agent: agent::Agent<openai::CompletionModel>,
+    mut history: Vec<Message>,
+) -> Result<()> {
+    loop {
+        print!("You> ");
+        std::io::stdout()
+            .flush()
+            .context("failed to flush stdout")?;
+
+        let mut input = String::new();
+        let bytes_read = std::io::stdin()
+            .read_line(&mut input)
+            .context("failed to read user input")?;
+        if bytes_read == 0 {
+            break;
+        }
+
+        let input = input.trim();
+        if input.is_empty() {
+            continue;
+        }
+        if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
+            break;
+        }
+
+        let mut stream = agent
+            .stream_chat(input, history.clone())
+            .multi_turn(20)
+            .await;
+        let final_res = stream_to_stdout(&mut stream).await?;
+        if let Some(new_history) = final_res.history() {
+            history = new_history.to_vec();
+        }
+        println!();
+    }
     Ok(())
 }

@@ -1,101 +1,125 @@
-# Rust Agent
+﻿# Rust Agent
 
-Rust Agent 鏄竴涓湰鍦板懡浠よ AI 鍔╂墜銆備綘鍙互鎶婂畠鎺ュ埌 DeepSeek銆丱penAI銆丱penRouter銆丱llama銆丩M Studio 绛夊吋瀹?OpenAI Chat Completions 鐨勬ā鍨嬫湇鍔★紝鐒跺悗璁╁畠鍦ㄤ綘鐨勯」鐩洰褰曢噷璇绘枃浠躲€佹敼鏂囦欢銆佹墽琛屽彈闄愮殑妫€鏌ュ懡浠ゃ€?
-## 浣犲彲浠ョ敤瀹冨仛浠€涔?
-- 鍜屾ā鍨嬭繘琛屽杞璇濄€?- 璁╂ā鍨嬫煡鐪嬮」鐩枃浠跺垪琛ㄣ€?- 璁╂ā鍨嬫寜琛岃鍙栨寚瀹氭枃浠跺唴瀹广€?- 璁╂ā鍨嬩慨鏀规枃浠跺唴瀹广€?- 璁╂ā鍨嬫墽琛屽畨鍏ㄧ櫧鍚嶅崟閲岀殑鍛戒护锛屼緥濡?`cargo check`銆乣git diff`銆?
-> 濡傛灉浣犲笇鏈涙ā鍨嬭兘璇绘枃浠躲€佹敼鏂囦欢鎴栨墽琛屽懡浠わ紝璇蜂娇鐢ㄦ敮鎸?tool calling / function calling 鐨勬ā鍨嬨€?
-## 蹇€熷紑濮?
-### 1. 鍑嗗 `.env`
+一个基于 Rust 和 `rig-core` 的命令行 AI agent。它兼容 OpenAI Chat Completions 风格的接口，可以连接 DeepSeek、OpenAI、OpenRouter、Ollama、LM Studio 等服务，并在项目目录中读取文件、编辑文件、执行受限检查命令。
 
-澶嶅埗绀轰緥閰嶇疆鏂囦欢锛?
+程序支持两种运行方式：
+
+- 交互模式：手动输入消息，agent 在当前进程内保留对话上下文。
+- 自循环模式：使用 `--auto` 指定目标，agent 会按观察、计划、执行、验证的节奏持续工作，直到完成、阻塞、连续无进展或达到循环上限。
+
+## 功能
+
+- OpenAI-compatible API 配置。
+- DeepSeek 官方 API 自动使用 `rig-core` 的 native DeepSeek provider。
+- 会话内上下文传递。
+- 文件列表、文件读取、文件编辑工具。
+- 受限命令执行工具。
+- 自循环模式最多运行 50 轮，每轮最多 20 次 multi-turn 工具调用。
+- 连续 3 轮 `NO_PROGRESS` 后自动停止。
+
+## 环境要求
+
+- Rust toolchain
+- 一个可用的 OpenAI-compatible API 服务
+- 支持 tool calling 或 function calling 的模型
+- PowerShell 或其他终端
+
+## 快速开始
+
+复制环境变量模板：
+
 ```powershell
 Copy-Item .env.example .env
 ```
 
-鐒跺悗缂栬緫 `.env`锛?
+编辑 `.env`：
+
 ```dotenv
 API_KEY=sk-your-api-key
 BASE_URL=https://api.deepseek.com
 MODEL=deepseek-v4-pro
 ```
 
-甯哥敤閰嶇疆椤癸細
-
-- `API_KEY`锛氫綘鐨勬ā鍨嬫湇鍔?API Key銆?- `BASE_URL`锛氭ā鍨嬫湇鍔″湴鍧€銆?- `MODEL`锛氳浣跨敤鐨勬ā鍨嬪悕绉般€?
-`.env` 閲岄€氬父鍖呭惈瀵嗛挜锛屼笉瑕佹妸瀹冩彁浜ゅ埌 Git 浠撳簱銆?
-### 2. 杩愯绋嬪簭
-
-濡傛灉浣犳槸浠庢簮鐮佽繍琛岋細
+运行交互模式：
 
 ```powershell
 cargo run
 ```
 
-濡傛灉浣犲凡缁忔湁缂栬瘧濂界殑绋嬪簭锛?
-```powershell
-.\rig-agent.exe
-```
+看到提示符后输入消息：
 
-鍚姩鍚庣湅鍒版彁绀虹锛?
 ```text
 You>
 ```
 
-鐩存帴杈撳叆浣犵殑闂鍗冲彲銆傞€€鍑鸿杈撳叆锛?
+退出程序：
+
 ```text
 exit
 ```
 
-鎴栵細
+或：
 
 ```text
 quit
 ```
 
-## `.env` 搴旇鏀惧湪鍝噷
+## 自循环模式
 
-`.env` 涓嶄細琚紪璇戣繘 `.exe`锛屽畠鏄湪绋嬪簭鍚姩鏃惰鍙栫殑銆?
-褰撳墠绋嬪簭浣跨敤 `dotenvy::dotenv().ok()` 鍔犺浇閰嶇疆锛屾墍浠ュ畠浼氫粠鈥滃惎鍔ㄧ▼搴忔椂鐨勫綋鍓嶅伐浣滅洰褰曗€濇煡鎵?`.env`銆?
-寮€鍙戞椂閫氬父杩欐牱鏀撅細
-
-```text
-E:\Rust\Rust-Agent\
-鈹溾攢鈹€ .env
-鈹溾攢鈹€ Cargo.toml
-鈹斺攢鈹€ src\
-```
-
-鐒跺悗鍦ㄩ」鐩牴鐩綍杩愯锛?
-```powershell
-cd E:\Rust\Rust-Agent
-cargo run
-```
-
-鍙戝竷缁欑敤鎴锋椂锛屾帹鑽愭妸 `.env` 鍜?`.exe` 鏀惧湪鍚屼竴涓洰褰曪細
-
-```text
-my-agent\
-鈹溾攢鈹€ rig-agent.exe
-鈹斺攢鈹€ .env
-```
-
-鐒跺悗浠庤繖涓洰褰曞惎鍔細
+使用 `--auto` 启动自循环模式：
 
 ```powershell
-cd my-agent
-.\rig-agent.exe
+cargo run -- --auto "检查项目，发现问题，修复并验证"
 ```
 
-杩欐牱绋嬪簭浼氳鍙栵細
+如果目标里有空格，请使用引号。程序读取 `--auto` 后面的第一个参数作为目标；不加引号时，目标只会取第一个词。
+
+如果不提供目标，会使用默认目标：
 
 ```text
-my-agent\.env
+Inspect the project and improve it safely.
 ```
 
-娉ㄦ剰锛氬鏋滀綘浠庡叾浠栫洰褰曞惎鍔ㄨ繖涓?exe锛岀▼搴忎細浼樺厛璇诲彇鈥滃惎鍔ㄧ洰褰曗€濅笅鐨?`.env`锛屼笉鏄?exe 鎵€鍦ㄧ洰褰曘€?
-## 甯歌妯″瀷閰嶇疆
+自循环模式每一轮会要求 agent 按以下步骤工作：
 
-### DeepSeek
+1. Observe current state.
+2. Decide the next concrete action.
+3. Use tools if needed.
+4. Verify the result.
+5. State whether progress was made.
+6. End with one of: `CONTINUE`, `DONE`, `BLOCKED`, `NO_PROGRESS`.
+
+停止条件：
+
+- 输出包含 `DONE`。
+- 输出包含 `BLOCKED`。
+- 连续 3 轮输出包含 `NO_PROGRESS`。
+- 达到 50 轮循环上限。
+
+## 配置项
+
+程序会读取当前工作目录下的 `.env`：
+
+```dotenv
+API_KEY=sk-your-api-key
+BASE_URL=https://api.deepseek.com
+MODEL=deepseek-v4-pro
+```
+
+变量说明：
+
+- `API_KEY`：API key。优先使用这个通用变量。
+- `BASE_URL`：OpenAI-compatible base URL。默认值为 `https://api.deepseek.com`。
+- `MODEL`：模型名称。默认值为 `deepseek-v4-pro`。
+
+兼容变量：
+
+- 如果没有 `API_KEY`，会依次读取 `DEEPSEEK_API_KEY`、`OPENAI_API_KEY`。
+- 如果没有 `BASE_URL`，会依次读取 `OPENAI_BASE_URL`、`DEEPSEEK_BASE_URL`。
+
+## Provider 示例
+
+DeepSeek：
 
 ```dotenv
 API_KEY=sk-your-deepseek-key
@@ -103,7 +127,9 @@ BASE_URL=https://api.deepseek.com
 MODEL=deepseek-v4-pro
 ```
 
-### OpenAI
+当 `BASE_URL` 包含 `deepseek` 时，程序会使用 native DeepSeek provider。这个路径可以在 tool calling 历史中保留并回传 `reasoning_content`，便于使用 DeepSeek thinking 模式。
+
+OpenAI：
 
 ```dotenv
 API_KEY=sk-your-openai-key
@@ -111,7 +137,7 @@ BASE_URL=https://api.openai.com/v1
 MODEL=gpt-4.1
 ```
 
-### OpenRouter
+OpenRouter：
 
 ```dotenv
 API_KEY=sk-or-your-openrouter-key
@@ -119,7 +145,7 @@ BASE_URL=https://openrouter.ai/api/v1
 MODEL=deepseek/deepseek-chat-v3.1
 ```
 
-### Ollama 鏈湴妯″瀷
+Ollama：
 
 ```dotenv
 API_KEY=ollama
@@ -127,7 +153,7 @@ BASE_URL=http://localhost:11434/v1
 MODEL=qwen2.5-coder:7b
 ```
 
-### LM Studio 鏈湴妯″瀷
+LM Studio：
 
 ```dotenv
 API_KEY=lm-studio
@@ -135,11 +161,11 @@ BASE_URL=http://localhost:1234/v1
 MODEL=local-model
 ```
 
-## 鍐呯疆宸ュ叿璇存槑
+## 工具
 
-### 鏂囦欢鍒楄〃
+### `list_files`
 
-`list_files` 浼氬垪鍑虹洰褰曚笅鐨勬枃浠跺拰鏂囦欢澶癸紝骞堕粯璁よ烦杩囪繖浜涘唴瀹癸細
+列出目录下的文件和文件夹，最多递归 5 层，默认跳过：
 
 - `.git`
 - `target`
@@ -147,16 +173,22 @@ MODEL=local-model
 - `.env`
 - `Cargo.lock`
 
-### 鏂囦欢璇诲彇
+### `read_file`
 
-`read_file` 鍙互璇诲彇鏁翠釜鏂囦欢锛屼篃鍙互鍙鍙栨寚瀹氳鑼冨洿锛屽噺灏戞ā鍨嬩笂涓嬫枃娑堣€椼€?
-### 鏂囦欢缂栬緫
+读取文件内容，支持 `start_line` 和 `end_line`。单个文件最大读取 128 KiB。
 
-`edit_file` 鍙互鏇挎崲鏁翠釜鏂囦欢锛屾垨鏇挎崲鏂囦欢涓涓€娆″嚭鐜扮殑鎸囧畾鍐呭銆傚缓璁瘡娆＄紪杈戝悗閫氳繃 `git diff` 妫€鏌ョ粨鏋溿€?
-### 鍛戒护鎵ц
+### `edit_file`
 
-`run_command` 鍙兘鎵ц鐧藉悕鍗曢噷鐨勫懡浠わ紝涓嶄細寮€鏀句换鎰?shell 鍛戒护銆?
-鍏佽鐨勫懡浠ゅ寘鎷細
+编辑文件内容：
+
+- 如果提供 `old_content`，只替换第一次匹配。
+- 如果不提供 `old_content`，会替换整个文件。
+
+### `run_command`
+
+执行受限命令，超时时间为 60 秒。
+
+允许的命令：
 
 - `cargo check`
 - `cargo test`
@@ -169,19 +201,39 @@ MODEL=local-model
 - `git show`
 - `rustc --version`
 
-鍛戒护鏈€澶氳繍琛?60 绉掞紝缁撴灉浼氳繑鍥?`stdout`銆乣stderr`銆乣exit_code` 鍜?`success`銆?
-## 瀹夊叏鎻愰啋
+## 构建
 
-- 涓嶈鍏紑 `.env`锛岄噷闈㈠彲鑳芥湁 API Key銆?- 璁╂ā鍨嬩慨鏀规枃浠跺墠锛屽缓璁厛鎻愪氦鎴栧浠藉綋鍓嶅伐浣滃尯銆?- 璁╂ā鍨嬩慨鏀规枃浠跺悗锛屽缓璁娇鐢?`git diff` 妫€鏌ユ敼鍔ㄣ€?- 濡傛灉妯″瀷涓嶈兘璋冪敤宸ュ叿锛岃纭浣犱娇鐢ㄧ殑妯″瀷鏀寔 function calling銆?
-## 浠庢簮鐮佹瀯寤?
-濡傛灉浣犳兂鑷繁缂栬瘧锛?
+开发检查：
+
+```powershell
+cargo check
+```
+
+发布构建：
+
 ```powershell
 cargo build --release
 ```
 
-缂栬瘧鍚庣殑绋嬪簭閫氬父浣嶄簬锛?
+生成的可执行文件：
+
 ```text
 target\release\rig-agent.exe
 ```
 
-鍙互鎶婂畠澶嶅埗鍒板崟鐙洰褰曪紝骞跺湪鍚岀洰褰曞噯澶?`.env` 鍚庤繍琛屻€
+如果直接运行 exe，请把 `.env` 放在运行命令所在的工作目录，或先切换到项目目录再运行。
+
+## 注意事项
+
+- `.env` 不要提交到 Git。
+- 自循环模式会持续消耗 API token，请给目标写清楚边界。
+- 当前上下文只保存在进程内，程序退出后不会持久化。
+- 长时间运行时，history 会增长，token 成本和响应时间也会增加。
+
+## 编码
+
+`README.md` 使用 UTF-8 编码保存。Windows PowerShell 5.1 中查看中文时，建议使用：
+
+```powershell
+Get-Content README.md -Encoding UTF8
+```

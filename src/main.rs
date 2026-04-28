@@ -38,7 +38,10 @@ async fn main() -> Result<()> {
     let mut history = Vec::new();
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if args.first().map(String::as_str) == Some("--auto") {
-        let gloa = args.get(1).cloned().unwrap_or_else(|| "gloa".into());
+        let goal = args
+            .get(1)
+            .cloned()
+            .unwrap_or_else(|| "Inspect the project and improve it safely.".into());
         let mut no_progress_count = 0;
         for cycle in 1..=50 {
             let prompt = format!(
@@ -79,7 +82,7 @@ Rules:
                 history = new_history.to_vec();
             }
             println!();
-            let context = final_res.to_string();
+            let context = final_res.response();
             if context.contains("DONE") {
                 println!("Goal achieved!");
                 break;
